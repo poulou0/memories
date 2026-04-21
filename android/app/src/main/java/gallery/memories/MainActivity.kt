@@ -10,6 +10,7 @@ import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowInsets
@@ -45,6 +46,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import gallery.memories.databinding.ActivityMainBinding
+import gallery.memories.service.PinchZoomHandler
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -77,6 +79,8 @@ class MainActivity : AppCompatActivity() {
 
     private var chooseFileCallback: ValueCallback<Array<Uri>>? = null
     private lateinit var chooseFileIntentLauncher: ActivityResultLauncher<Intent>
+
+    var pinchZoomHandler: PinchZoomHandler? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -257,6 +261,12 @@ class MainActivity : AppCompatActivity() {
                     super.onReceivedSslError(view, handler, error)
                 }
             }
+
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                // Inject zoom support CSS after page finishes loading
+                pinchZoomHandler?.injectZoomSupportCSS()
+            }
         }
 
         // Use the web chrome client to handle file uploads
@@ -284,8 +294,15 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Initialize pinch zoom handler
+        pinchZoomHandler = PinchZoomHandler(binding.webview)
+
         // Pass through touch events
         binding.webview.setOnTouchListener { _, event ->
+            // Handle pinch zoom gestures
+            pinchZoomHandler?.onTouchEvent(event) ?: false
+
+            // Also pass to video player if visible
             if (player != null) {
                 binding.videoView.dispatchTouchEvent(event)
             }

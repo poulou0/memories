@@ -182,6 +182,18 @@ class NativeX(private val mCtx: MainActivity) {
         }
     }
 
+    @JavascriptInterface
+    fun resetZoom() {
+        mCtx.runOnUiThread {
+            mCtx.pinchZoomHandler?.resetZoom()
+        }
+    }
+
+    @JavascriptInterface
+    fun getZoomLevel(): Float {
+        return mCtx.pinchZoomHandler?.getCurrentZoom() ?: 1.0f
+    }
+
     fun handleRequest(request: WebResourceRequest): WebResourceResponse {
         val path = request.url.path ?: return makeErrorResponse()
 
